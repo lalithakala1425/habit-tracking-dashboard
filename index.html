@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HabitFlow — Your Daily Ritual Tracker</title>
+  <meta name="description" content="Track habits, build streaks, and achieve your goals with HabitFlow." />
+  <meta name="theme-color" content="#0a0a12" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet" />
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <!-- App Stylesheet -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ============================================================
+       ONBOARDING SCREEN
+       ============================================================ -->
+  <div id="onboarding" role="main" aria-label="Welcome screen">
+    <div class="onboard-bg">
+      <div class="orb orb1"></div>
+      <div class="orb orb2"></div>
+      <div class="orb orb3"></div>
+    </div>
+    <div class="onboard-content">
+      <div class="onboard-logo" aria-hidden="true">🌊</div>
+      <h1 class="onboard-title">HabitFlow</h1>
+      <p class="onboard-sub">Build habits that stick. Track your journey,<br />celebrate every streak.</p>
+
+      <div class="onboard-features" aria-label="App features">
+        <div class="onboard-feat"><i class="fa fa-fire" aria-hidden="true"></i> Streak Tracking</div>
+        <div class="onboard-feat"><i class="fa fa-chart-bar" aria-hidden="true"></i> Progress Charts</div>
+        <div class="onboard-feat"><i class="fa fa-stopwatch" aria-hidden="true"></i> Pomodoro Timer</div>
+        <div class="onboard-feat"><i class="fa fa-moon" aria-hidden="true"></i> Dark Mode</div>
+      </div>
+
+      <div class="onboard-input-wrap">
+        <input
+          class="onboard-name-input"
+          id="nameInput"
+          type="text"
+          placeholder="What should we call you? ✨"
+          maxlength="20"
+          aria-label="Enter your name"
+          autocomplete="off"
+        />
+      </div>
+
+      <button class="btn-start" id="btnStart" aria-label="Get started">
+        Get Started <i class="fa fa-arrow-right" aria-hidden="true"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MAIN APP
+       ============================================================ -->
+  <div id="app" aria-hidden="true">
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- ── TOP HEADER ── -->
+    <header class="app-header" role="banner">
+      <div class="header-left">
+        <div class="app-logo" aria-hidden="true">🌊</div>
+        <div class="app-name">HabitFlow</div>
+      </div>
+      <div class="header-right">
+        <button class="icon-btn" id="themeBtn" onclick="APP.toggleTheme()" title="Toggle theme" aria-label="Toggle dark/light mode">
+          <i class="fa fa-moon" aria-hidden="true"></i>
+        </button>
+        <button class="icon-btn" onclick="APP.showNotifications()" title="Notifications" aria-label="Show notifications">
+          <i class="fa fa-bell" aria-hidden="true"></i>
+        </button>
+        <div class="avatar" id="avatarEl" onclick="APP.navTo('settings')" role="button" tabindex="0" aria-label="Go to settings">U</div>
+      </div>
+    </header>
+
+    <!-- ── PAGE CONTAINER ── -->
+    <main class="page-container" role="main">
+
+      <!-- ─── DASHBOARD PAGE ─── -->
+      <section class="page active" id="page-dashboard" aria-label="Dashboard">
+
+        <!-- Greeting Banner -->
+        <div class="greeting-banner">
+          <div class="greeting-banner-inner">
+            <div class="greeting-time" id="greetTime">GOOD MORNING</div>
+            <div class="greeting-text" id="greetText">Welcome back! 👋</div>
+            <div class="greeting-date" id="greetDate">Saturday, April 4</div>
+            <div class="greeting-weather" id="weatherWidget" aria-live="polite">
+              <i class="fa fa-location-dot" aria-hidden="true"></i>
+              <span id="weatherText">Fetching weather…</span>
+            </div>
+          </div>
+          <div class="banner-deco" aria-hidden="true">
+            <div class="banner-circle bc1"></div>
+            <div class="banner-circle bc2"></div>
+          </div>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="stats-grid" role="list" aria-label="Summary statistics">
+          <div class="stat-card s1" role="listitem">
+            <div class="stat-icon" aria-hidden="true">📋</div>
+            <div class="stat-value" id="statTotal">0</div>
+            <div class="stat-label">Total Habits</div>
+          </div>
+          <div class="stat-card s2" role="listitem">
+            <div class="stat-icon" aria-hidden="true">✅</div>
+            <div class="stat-value" id="statToday">0</div>
+            <div class="stat-label">Done Today</div>
+          </div>
+          <div class="stat-card s3" role="listitem">
+            <div class="stat-icon" aria-hidden="true">🔥</div>
+            <div class="stat-value" id="statStreak">0</div>
+            <div class="stat-label">Best Streak</div>
+          </div>
+          <div class="stat-card s4" role="listitem">
+            <div class="stat-icon" aria-hidden="true">⚡</div>
+            <div class="stat-value" id="statScore">0%</div>
+            <div class="stat-label">Today's Score</div>
+          </div>
+        </div>
+
+        <!-- Motivational Quote -->
+        <div class="quote-card" aria-label="Quote of the day">
+          <div class="quote-mark" aria-hidden="true">"</div>
+          <p class="quote-text" id="quoteText">Loading motivational quote…</p>
+          <div class="quote-author" id="quoteAuthor">— HabitFlow</div>
+          <button class="quote-refresh" onclick="APP.loadQuote(true)" title="New quote" aria-label="Load new quote">
+            <i class="fa fa-rotate-right" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <!-- Productivity Score -->
+        <div class="card">
+          <div class="card-title"><i class="fa fa-bolt" aria-hidden="true"></i> Productivity Score</div>
+          <div class="productivity-score">
+            <div class="score-ring-wrap" role="img" aria-label="Productivity score ring">
+              <canvas id="scoreRing" width="80" height="80"></canvas>
+              <div class="score-inner">
+                <div class="score-num" id="scoreRingVal">0</div>
+                <div class="score-lbl">SCORE</div>
+              </div>
+            </div>
+            <div class="score-info">
+              <div class="score-title" id="scoreMsgTitle">Just Getting Started</div>
+              <div class="score-msg" id="scoreMsgBody">Complete your first habit today to begin building momentum!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weekly Chart -->
+        <div class="card">
+          <div class="card-title"><i class="fa fa-chart-bar" aria-hidden="true"></i> Weekly Progress</div>
+          <div class="chart-container">
+            <canvas id="weeklyChart" aria-label="Weekly progress bar chart"></canvas>
+          </div>
+        </div>
+
+        <!-- Monthly Chart -->
+        <div class="card">
+          <div class="card-title"><i class="fa fa-chart-line" aria-hidden="true"></i> Monthly Overview</div>
+          <div class="chart-container">
+            <canvas id="monthlyChart" aria-label="Monthly progress line chart"></canvas>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ─── HABITS PAGE ─── -->
+      <section class="page" id="page-habits" aria-label="Habits">
+
+        <!-- Search Bar -->
+        <div class="search-bar" role="search">
+          <i class="fa fa-search" aria-hidden="true"></i>
+          <input
+            type="text"
+            placeholder="Search habits…"
+            id="searchInput"
+            oninput="APP.renderHabits()"
+            aria-label="Search habits"
+            autocomplete="off"
+          />
+          <i class="fa fa-sliders sort-icon" onclick="APP.showSortMenu()" title="Sort options" role="button" tabindex="0" aria-label="Sort habits"></i>
+        </div>
+
+        <!-- Category Filter Chips -->
+        <div class="filter-chips" id="filterChips" role="group" aria-label="Filter by category">
+          <button class="chip active" data-cat="all"     onclick="APP.setFilter('all',this)">All</button>
+          <button class="chip" data-cat="Health"   onclick="APP.setFilter('Health',this)">🏥 Health</button>
+          <button class="chip" data-cat="Fitness"  onclick="APP.setFilter('Fitness',this)">💪 Fitness</button>
+          <button class="chip" data-cat="Study"    onclick="APP.setFilter('Study',this)">📚 Study</button>
+          <button class="chip" data-cat="Personal" onclick="APP.setFilter('Personal',this)">🧘 Personal</button>
+          <button class="chip" data-cat="Finance"  onclick="APP.setFilter('Finance',this)">💰 Finance</button>
+          <button class="chip" data-cat="Social"   onclick="APP.setFilter('Social',this)">👥 Social</button>
+        </div>
+
+        <!-- Section Header -->
+        <div class="section-header">
+          <div class="section-title">My Habits <span class="badge" id="habitsCount">0</span></div>
+          <button class="section-action" onclick="APP.openHabitModal()" aria-label="Add new habit">
+            <i class="fa fa-plus" aria-hidden="true"></i> Add New
+          </button>
+        </div>
+
+        <!-- Habits List -->
+        <div class="habits-list" id="habitsList" role="list" aria-label="Habits list"></div>
+
+      </section>
+
+      <!-- ─── TIMER PAGE ─── -->
+      <section class="page" id="page-timer" aria-label="Focus Timer">
+
+        <div class="section-header">
+          <div class="section-title">🍅 Focus Timer</div>
+        </div>
+
+        <!-- Timer Mode Tabs -->
+        <div class="timer-tabs" role="tablist" aria-label="Timer modes">
+          <button class="timer-tab active" role="tab" aria-selected="true"  onclick="APP.switchTimerTab('pomodoro',this)">Pomodoro</button>
+          <button class="timer-tab"        role="tab" aria-selected="false" onclick="APP.switchTimerTab('custom',this)">Custom</button>
+        </div>
+
+        <!-- Pomodoro Tab -->
+        <div id="pomodoroTab" role="tabpanel" aria-label="Pomodoro timer">
+          <div class="pomodoro-display">
+            <!-- SVG Ring -->
+            <div class="timer-ring-wrap" aria-label="Timer progress">
+              <svg class="timer-svg" width="220" height="220" viewBox="0 0 220 220" aria-hidden="true">
+                <defs>
+                  <linearGradient id="timerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#7c6ff7"/>
+                    <stop offset="100%" stop-color="#38bdf8"/>
+                  </linearGradient>
+                </defs>
+                <circle class="timer-ring-bg" cx="110" cy="110" r="96"/>
+                <circle class="timer-ring-fill" id="timerRingFill" cx="110" cy="110" r="96"
+                  stroke-dasharray="603" stroke-dashoffset="0"/>
+              </svg>
+              <div class="timer-time">
+                <div class="timer-num" id="pomTimer" aria-live="off">25:00</div>
+                <div class="timer-phase" id="pomPhase">FOCUS TIME</div>
+              </div>
+            </div>
+
+            <!-- Session Dots -->
+            <div class="pomodoro-count" id="pomCount" aria-label="Completed sessions">
+              <div class="pom-dot"></div>
+              <div class="pom-dot"></div>
+              <div class="pom-dot"></div>
+              <div class="pom-dot"></div>
+            </div>
+
+            <!-- Controls -->
+            <div class="timer-controls">
+              <button class="timer-btn timer-reset" onclick="APP.pomReset()" title="Reset timer" aria-label="Reset timer">
+                <i class="fa fa-rotate-left" aria-hidden="true"></i>
+              </button>
+              <button class="timer-btn timer-play" id="pomPlayBtn" onclick="APP.pomToggle()" aria-label="Start or pause timer">
+                <i class="fa fa-play" aria-hidden="true"></i>
+              </button>
+              <button class="timer-btn timer-skip" onclick="APP.pomSkip()" title="Skip phase" aria-label="Skip to next phase">
+                <i class="fa fa-forward-step" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Pomodoro Settings -->
+          <div class="card timer-settings-card">
+            <div class="card-title"><i class="fa fa-gear" aria-hidden="true"></i> Settings</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="pomFocusMin">Focus (min)</label>
+                <input type="number" class="form-input" id="pomFocusMin" value="25" min="1" max="90" onchange="APP.pomReset()" aria-label="Focus duration in minutes"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="pomBreakMin">Break (min)</label>
+                <input type="number" class="form-input" id="pomBreakMin" value="5"  min="1" max="30" onchange="APP.pomReset()" aria-label="Break duration in minutes"/>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Custom Timer Tab -->
+        <div id="customTab" class="hidden" role="tabpanel" aria-label="Custom countdown timer">
+          <div class="pomodoro-display">
+            <div class="timer-ring-wrap">
+              <svg class="timer-svg" width="220" height="220" viewBox="0 0 220 220" aria-hidden="true">
+                <circle class="timer-ring-bg" cx="110" cy="110" r="96"/>
+                <circle class="timer-ring-fill" id="customRingFill" cx="110" cy="110" r="96"
+                  stroke-dasharray="603" stroke-dashoffset="0"
+                  style="stroke:url(#timerGrad)"/>
+              </svg>
+              <div class="timer-time">
+                <div class="timer-num" id="customTimer" aria-live="off">00:00</div>
+                <div class="timer-phase">COUNTDOWN</div>
+              </div>
+            </div>
+
+            <div class="custom-time-inputs">
+              <div class="time-spin">
+                <button class="spin-btn" onclick="APP.spinAdjust('customH',1)" aria-label="Increase hours">▲</button>
+                <input type="number" class="time-spin-val" id="customH" value="0" min="0" max="23" aria-label="Hours"/>
+                <button class="spin-btn" onclick="APP.spinAdjust('customH',-1)" aria-label="Decrease hours">▼</button>
+                <div class="time-spin-label">Hours</div>
+              </div>
+              <div class="time-colon">:</div>
+              <div class="time-spin">
+                <button class="spin-btn" onclick="APP.spinAdjust('customM',1)" aria-label="Increase minutes">▲</button>
+                <input type="number" class="time-spin-val" id="customM" value="10" min="0" max="59" aria-label="Minutes"/>
+                <button class="spin-btn" onclick="APP.spinAdjust('customM',-1)" aria-label="Decrease minutes">▼</button>
+                <div class="time-spin-label">Min</div>
+              </div>
+              <div class="time-colon">:</div>
+              <div class="time-spin">
+                <button class="spin-btn" onclick="APP.spinAdjust('customS',1)" aria-label="Increase seconds">▲</button>
+                <input type="number" class="time-spin-val" id="customS" value="0" min="0" max="59" aria-label="Seconds"/>
+                <button class="spin-btn" onclick="APP.spinAdjust('customS',-1)" aria-label="Decrease seconds">▼</button>
+                <div class="time-spin-label">Sec</div>
+              </div>
+            </div>
+
+            <div class="timer-controls">
+              <button class="timer-btn timer-reset" onclick="APP.customReset()" aria-label="Reset custom timer">
+                <i class="fa fa-rotate-left" aria-hidden="true"></i>
+              </button>
+              <button class="timer-btn timer-play" id="customPlayBtn" onclick="APP.customToggle()" aria-label="Start or pause custom timer">
+                <i class="fa fa-play" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ─── CALENDAR PAGE ─── -->
+      <section class="page" id="page-calendar" aria-label="Habit Calendar">
+
+        <div class="card">
+          <div class="cal-header">
+            <button class="cal-nav-btn" onclick="APP.calNav(-1)" aria-label="Previous month">
+              <i class="fa fa-chevron-left" aria-hidden="true"></i>
+            </button>
+            <div class="cal-month" id="calMonthLabel" aria-live="polite"></div>
+            <button class="cal-nav-btn" onclick="APP.calNav(1)" aria-label="Next month">
+              <i class="fa fa-chevron-right" aria-hidden="true"></i>
+            </button>
+          </div>
+
+          <!-- Day Labels -->
+          <div class="cal-days" aria-hidden="true">
+            <div class="cal-day-label">Su</div>
+            <div class="cal-day-label">Mo</div>
+            <div class="cal-day-label">Tu</div>
+            <div class="cal-day-label">We</div>
+            <div class="cal-day-label">Th</div>
+            <div class="cal-day-label">Fr</div>
+            <div class="cal-day-label">Sa</div>
+          </div>
+
+          <!-- Calendar Grid -->
+          <div class="cal-grid" id="calGrid" role="grid" aria-label="Calendar days"></div>
+        </div>
+
+        <!-- Legend -->
+        <div class="cal-legend">
+          <div class="legend-item"><span class="legend-dot" style="background:var(--green);opacity:0.4"></span> All done</div>
+          <div class="legend-item"><span class="legend-dot" style="background:var(--accent);opacity:0.3"></span> Partial</div>
+          <div class="legend-item"><span class="legend-dot" style="background:var(--text3)"></span> Missed</div>
+        </div>
+
+        <!-- Day Detail -->
+        <div class="card">
+          <div class="card-title" id="calDetailTitle">
+            <i class="fa fa-list" aria-hidden="true"></i> Today's Habits
+          </div>
+          <div id="calDetailList" aria-live="polite"></div>
+        </div>
+
+      </section>
+
+      <!-- ─── SETTINGS PAGE ─── -->
+      <section class="page" id="page-settings" aria-label="Settings">
+
+        <!-- Profile Card -->
+        <div class="profile-card">
+          <div class="profile-avatar-lg" id="profileAvatarLg" aria-hidden="true">U</div>
+          <div class="profile-info">
+            <div class="profile-name" id="profileName">User</div>
+            <div class="profile-since" id="profileSince">Member since today</div>
+          </div>
+          <div class="profile-badge">
+            <i class="fa fa-star" aria-hidden="true"></i>
+          </div>
+        </div>
+
+        <!-- Appearance -->
+        <div class="settings-section">
+          <div class="settings-section-title">Appearance</div>
+          <div class="setting-item" onclick="APP.toggleTheme()">
+            <div class="setting-item-icon si-purple"><i class="fa fa-moon" aria-hidden="true"></i></div>
+            <div class="setting-item-info">
+              <div class="setting-item-name">Dark Mode</div>
+              <div class="setting-item-desc">Toggle light / dark theme</div>
+            </div>
+            <label class="toggle-switch" onclick="event.stopPropagation()" aria-label="Dark mode toggle">
+              <input type="checkbox" id="darkToggle" onchange="APP.toggleTheme()" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="settings-section">
+          <div class="settings-section-title">Notifications</div>
+          <div class="setting-item">
+            <div class="setting-item-icon si-pink"><i class="fa fa-bell" aria-hidden="true"></i></div>
+            <div class="setting-item-info">
+              <div class="setting-item-name">Browser Notifications</div>
+              <div class="setting-item-desc">Get reminded about your habits</div>
+            </div>
+            <label class="toggle-switch" onclick="event.stopPropagation()" aria-label="Notification toggle">
+              <input type="checkbox" id="notifToggle" onchange="APP.toggleNotifications(this)" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Habit Reminder Info -->
+        <div class="settings-section">
+          <div class="settings-section-title">Reminders</div>
+          <div class="setting-item" onclick="APP.navTo('habits')">
+            <div class="setting-item-icon si-teal"><i class="fa fa-clock" aria-hidden="true"></i></div>
+            <div class="setting-item-info">
+              <div class="setting-item-name">Habit Reminders</div>
+              <div class="setting-item-desc">Set per-habit reminders when adding/editing</div>
+            </div>
+            <i class="fa fa-chevron-right setting-item-right" aria-hidden="true"></i>
+          </div>
+        </div>
+
+        <!-- Data -->
+        <div class="settings-section">
+          <div class="settings-section-title">Data & Export</div>
+          <button class="export-btn" onclick="APP.exportJSON()">
+            <i class="fa fa-file-export" aria-hidden="true"></i> Export as JSON
+          </button>
+          <button class="export-btn export-csv" onclick="APP.exportCSV()">
+            <i class="fa fa-file-csv" aria-hidden="true"></i> Export as CSV
+          </button>
+          <button class="export-btn export-load" onclick="APP.loadSampleData()">
+            <i class="fa fa-database" aria-hidden="true"></i> Load Sample Data
+          </button>
+          <button class="export-btn export-danger" onclick="APP.clearAllData()">
+            <i class="fa fa-trash" aria-hidden="true"></i> Clear All Data
+          </button>
+        </div>
+
+        <!-- About -->
+        <div class="settings-section">
+          <div class="settings-section-title">About</div>
+          <div class="setting-item">
+            <div class="setting-item-icon si-blue"><i class="fa fa-info-circle" aria-hidden="true"></i></div>
+            <div class="setting-item-info">
+              <div class="setting-item-name">HabitFlow v2.0</div>
+              <div class="setting-item-desc">Your daily ritual tracker — built with ❤️</div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+    </main><!-- /page-container -->
+
+    <!-- ── BOTTOM NAVIGATION ── -->
+    <nav class="bottom-nav" role="navigation" aria-label="Main navigation">
+      <button class="nav-item active" id="nav-dashboard" onclick="APP.navTo('dashboard')" aria-label="Dashboard" aria-current="page">
+        <i class="fa fa-house" aria-hidden="true"></i>
+        <span>Home</span>
+      </button>
+      <button class="nav-item" id="nav-habits" onclick="APP.navTo('habits')" aria-label="Habits">
+        <i class="fa fa-check-circle" aria-hidden="true"></i>
+        <span>Habits</span>
+      </button>
+      <button class="nav-fab" onclick="APP.openHabitModal()" aria-label="Add new habit">
+        <i class="fa fa-plus" aria-hidden="true"></i>
+      </button>
+      <button class="nav-item" id="nav-timer" onclick="APP.navTo('timer')" aria-label="Timer">
+        <i class="fa fa-stopwatch" aria-hidden="true"></i>
+        <span>Timer</span>
+      </button>
+      <button class="nav-item" id="nav-calendar" onclick="APP.navTo('calendar')" aria-label="Calendar">
+        <i class="fa fa-calendar" aria-hidden="true"></i>
+        <span>Calendar</span>
+      </button>
+    </nav>
+
+  </div><!-- /#app -->
+
+  <!-- ============================================================
+       ADD / EDIT HABIT MODAL
+       ============================================================ -->
+  <div class="modal-overlay" id="habitModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-sheet">
+      <div class="modal-handle" aria-hidden="true"></div>
+      <h2 class="modal-title" id="modalTitle">Add New Habit</h2>
+
+      <div class="form-group">
+        <label class="form-label" for="hName">Habit Name *</label>
+        <input class="form-input" id="hName" type="text" placeholder="e.g. Morning meditation…" maxlength="40" autocomplete="off" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="hCat">Category</label>
+          <select class="form-input" id="hCat">
+            <option value="Health">🏥 Health</option>
+            <option value="Fitness">💪 Fitness</option>
+            <option value="Study">📚 Study</option>
+            <option value="Personal">🧘 Personal</option>
+            <option value="Finance">💰 Finance</option>
+            <option value="Social">👥 Social</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="hPriority">Priority</label>
+          <select class="form-input" id="hPriority">
+            <option value="high">🔴 High</option>
+            <option value="medium" selected>🟡 Medium</option>
+            <option value="low">🟢 Low</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="hReminder">Reminder Time (optional)</label>
+        <input class="form-input" id="hReminder" type="time" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Choose Icon</label>
+        <div class="emoji-grid" id="emojiGrid" role="group" aria-label="Select habit icon"></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Choose Color</label>
+        <div class="color-grid" id="colorGrid" role="group" aria-label="Select habit color"></div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="APP.closeHabitModal()">Cancel</button>
+        <button class="btn-primary" onclick="APP.saveHabit()" id="saveHabitBtn">Add Habit ✨</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Script -->
+  <script src="script.js"></script>
+</body>
+</html>
