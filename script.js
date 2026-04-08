@@ -13,6 +13,9 @@ const APP = (() => {
 
   /* ---------------- INIT ---------------- */
   function init() {
+    const savedTheme = localStorage.getItem("hf_theme") || "dark";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+
     if (!state.user) {
       showOnboarding();
     } else {
@@ -29,8 +32,13 @@ const APP = (() => {
     document.getElementById("onboarding").style.display = "none";
     document.getElementById("app").style.display = "block";
 
-    document.getElementById("avatarEl").innerText =
-      state.user[0]?.toUpperCase() || "U";
+    const avatarEl = document.getElementById("avatarEl");
+    if (avatarEl) {
+      avatarEl.innerText = state.user[0]?.toUpperCase() || "U";
+    }
+
+    const timerEl = document.getElementById("pomTimer");
+    if (timerEl) timerEl.innerText = "25:00";
 
     renderHabits();
     updateStats();
@@ -50,11 +58,10 @@ const APP = (() => {
   /* ---------------- NAV ---------------- */
   function navTo(page) {
     document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-    document.getElementById(`page-${page}`).classList.add("active");
+    document.getElementById(`page-${page}`)?.classList.add("active");
 
     document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
-    const navBtn = document.getElementById(`nav-${page}`);
-    if (navBtn) navBtn.classList.add("active");
+    document.getElementById(`nav-${page}`)?.classList.add("active");
   }
 
   /* ---------------- HABITS ---------------- */
@@ -64,6 +71,8 @@ const APP = (() => {
 
   function renderHabits() {
     const list = document.getElementById("habitsList");
+    if (!list) return;
+
     const search = document.getElementById("searchInput")?.value.toLowerCase() || "";
 
     let habits = state.habits.filter(h =>
@@ -73,26 +82,33 @@ const APP = (() => {
 
     list.innerHTML = "";
 
-    habits.forEach((h, i) => {
+    habits.forEach(h => {
+      const realIndex = state.habits.indexOf(h);
+
       const el = document.createElement("div");
       el.className = "habit-item";
       el.innerHTML = `
         <div>${h.name}</div>
-        <button onclick="APP.toggleHabit(${i})">✔</button>
-        <button onclick="APP.deleteHabit(${i})">🗑</button>
+        <button onclick="APP.toggleHabit(${realIndex})">✔</button>
+        <button onclick="APP.deleteHabit(${realIndex})">🗑</button>
       `;
       list.appendChild(el);
     });
 
-    document.getElementById("habitsCount").innerText = habits.length;
+    if (habits.length === 0) {
+      list.innerHTML = "<div class='empty-state'>No habits found</div>";
+    }
+
+    const countEl = document.getElementById("habitsCount");
+    if (countEl) countEl.innerText = habits.length;
   }
 
   function openHabitModal() {
-    document.getElementById("habitModal").classList.add("active");
+    document.getElementById("habitModal")?.classList.add("open");
   }
 
   function closeHabitModal() {
-    document.getElementById("habitModal").classList.remove("active");
+    document.getElementById("habitModal")?.classList.remove("open");
   }
 
   function saveHabit() {
@@ -124,8 +140,14 @@ const APP = (() => {
 
   function toggleHabit(i) {
     const h = state.habits[i];
-    h.done = !h.done;
-    if (h.done) h.streak++;
+
+    if (!h.done) {
+      h.done = true;
+      h.streak++;
+    } else {
+      h.done = false;
+    }
+
     saveHabits();
     renderHabits();
     updateStats();
@@ -140,20 +162,28 @@ const APP = (() => {
 
   /* ---------------- STATS ---------------- */
   function updateStats() {
-    document.getElementById("statTotal").innerText = state.habits.length;
+    const totalEl = document.getElementById("statTotal");
+    if (totalEl) totalEl.innerText = state.habits.length;
 
     const done = state.habits.filter(h => h.done).length;
-    document.getElementById("statToday").innerText = done;
+
+    const todayEl = document.getElementById("statToday");
+    if (todayEl) todayEl.innerText = done;
 
     const best = Math.max(0, ...state.habits.map(h => h.streak));
-    document.getElementById("statStreak").innerText = best;
+
+    const streakEl = document.getElementById("statStreak");
+    if (streakEl) streakEl.innerText = best;
 
     const score = state.habits.length
       ? Math.round((done / state.habits.length) * 100)
       : 0;
 
-    document.getElementById("statScore").innerText = score + "%";
-    document.getElementById("scoreRingVal").innerText = score;
+    const scoreEl = document.getElementById("statScore");
+    if (scoreEl) scoreEl.innerText = score + "%";
+
+    const ringEl = document.getElementById("scoreRingVal");
+    if (ringEl) ringEl.innerText = score;
   }
 
   /* ---------------- GREETING ---------------- */
@@ -169,21 +199,28 @@ const APP = (() => {
       `Welcome back, ${state.user}! 👋`;
 
     document.getElementById("greetDate").innerText =
-      new Date().toDateString();
+      new Date().toLocaleDateString(undefined, {
+        weekday: "long",
+        month: "short",
+        day: "numeric"
+      });
   }
 
   /* ---------------- THEME ---------------- */
   function toggleTheme() {
     const root = document.documentElement;
-    const current = root.getAttribute("data-theme");
+    const current = root.getAttribute("data-theme") || "dark";
 
-    root.setAttribute("data-theme", current === "dark" ? "light" : "dark");
+    const next = current === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    localStorage.setItem("hf_theme", next);
   }
 
   /* ---------------- TIMER ---------------- */
   function pomToggle() {
+    if (state.timer) clearInterval(state.timer);
+
     if (state.pom.running) {
-      clearInterval(state.timer);
       state.pom.running = false;
       return;
     }
@@ -191,6 +228,13 @@ const APP = (() => {
     state.pom.running = true;
 
     state.timer = setInterval(() => {
+      if (state.pom.time <= 0) {
+        clearInterval(state.timer);
+        state.pom.running = false;
+        alert("Time's up!");
+        return;
+      }
+
       state.pom.time--;
 
       const min = Math.floor(state.pom.time / 60);
@@ -198,22 +242,18 @@ const APP = (() => {
 
       document.getElementById("pomTimer").innerText =
         `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
-
-      if (state.pom.time <= 0) {
-        clearInterval(state.timer);
-        alert("Time's up!");
-      }
     }, 1000);
   }
 
   function pomReset() {
     clearInterval(state.timer);
     state.pom.running = false;
-    state.pom.time =
-      parseInt(document.getElementById("pomFocusMin").value) * 60;
+
+    const min = document.getElementById("pomFocusMin").value;
+    state.pom.time = parseInt(min) * 60;
 
     document.getElementById("pomTimer").innerText =
-      `${document.getElementById("pomFocusMin").value}:00`;
+      `${String(min).padStart(2, "0")}:00`;
   }
 
   /* ---------------- EXPORT ---------------- */
@@ -229,8 +269,9 @@ const APP = (() => {
 
   function exportCSV() {
     let csv = "Name,Category,Streak\n";
+
     state.habits.forEach(h => {
-      csv += `${h.name},${h.category},${h.streak}\n`;
+      csv += `"${h.name}","${h.category}",${h.streak}\n`;
     });
 
     const blob = new Blob([csv], { type: "text/csv" });
